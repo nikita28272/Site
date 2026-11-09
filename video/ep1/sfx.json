@@ -1,0 +1,152 @@
+[
+ {
+  "t": 0,
+  "vol": 0.35,
+  "src": "aevalsrc=0.10*sin(2*PI*55*t)*(0.7+0.3*sin(2*PI*0.13*t))+0.06*sin(2*PI*82.4*t)+0.03*sin(2*PI*110*t)*(0.5+0.5*sin(2*PI*0.07*t)):d=80,lowpass=f=300,afade=t=in:d=1.5,afade=t=out:st=77:d=3"
+ },
+ {
+  "t": 6.55,
+  "vol": 0.55,
+  "src": "sine=f=52:d=0.9,afade=t=out:st=0:d=0.9"
+ },
+ {
+  "t": 20.36,
+  "vol": 0.55,
+  "src": "sine=f=52:d=0.9,afade=t=out:st=0:d=0.9"
+ },
+ {
+  "t": 21.58,
+  "vol": 0.55,
+  "src": "sine=f=52:d=0.9,afade=t=out:st=0:d=0.9"
+ },
+ {
+  "t": 25.6,
+  "vol": 0.55,
+  "src": "sine=f=52:d=0.9,afade=t=out:st=0:d=0.9"
+ },
+ {
+  "t": 72.4,
+  "vol": 0.55,
+  "src": "sine=f=52:d=0.9,afade=t=out:st=0:d=0.9"
+ },
+ {
+  "t": 25.6,
+  "vol": 0.3,
+  "src": "sine=f=1900:d=0.03,afade=t=out:st=0:d=0.03"
+ },
+ {
+  "t": 26.6,
+  "vol": 0.3,
+  "src": "sine=f=1900:d=0.03,afade=t=out:st=0:d=0.03"
+ },
+ {
+  "t": 27.6,
+  "vol": 0.3,
+  "src": "sine=f=1900:d=0.03,afade=t=out:st=0:d=0.03"
+ },
+ {
+  "t": 28.6,
+  "vol": 0.3,
+  "src": "sine=f=1900:d=0.03,afade=t=out:st=0:d=0.03"
+ },
+ {
+  "t": 29.6,
+  "vol": 0.3,
+  "src": "sine=f=1900:d=0.03,afade=t=out:st=0:d=0.03"
+ },
+ {
+  "t": 30.6,
+  "vol": 0.3,
+  "src": "sine=f=1900:d=0.03,afade=t=out:st=0:d=0.03"
+ },
+ {
+  "t": 9.25,
+  "vol": 0.18,
+  "src": "aevalsrc=sin(2*PI*2400*t)*mod(floor(t*40)\\,2):d=0.4"
+ },
+ {
+  "t": 9.65,
+  "vol": 0.1,
+  "src": "aevalsrc=sin(2*PI*1200*t)*exp(-90*mod(t\\,0.05)):d=1.6"
+ },
+ {
+  "t": 13.25,
+  "vol": 0.3,
+  "src": "sine=f=660:d=0.1,afade=t=out:st=0:d=0.1"
+ },
+ {
+  "t": 13.35,
+  "vol": 0.25,
+  "src": "sine=f=990:d=0.14,afade=t=out:st=0:d=0.14"
+ },
+ {
+  "t": 19.03,
+  "vol": 0.15,
+  "src": "aevalsrc=sin(2*PI*300*t)*mod(floor(t*30)\\,2):d=0.8"
+ },
+ {
+  "t": 31.8,
+  "vol": 0.12,
+  "src": "aevalsrc=sin(2*PI*1500*t)*exp(-90*mod(t\\,0.11)):d=6.7"
+ },
+ {
+  "t": 39.519999999999996,
+  "vol": 0.2,
+  "src": "sine=f=1320:d=0.12,afade=t=out:st=0:d=0.12"
+ },
+ {
+  "t": 44.16,
+  "vol": 0.2,
+  "src": "sine=f=990:d=0.1,afade=t=out:st=0:d=0.1"
+ },
+ {
+  "t": 46.16,
+  "vol": 0.2,
+  "src": "sine=f=990:d=0.1,afade=t=out:st=0:d=0.1"
+ },
+ {
+  "t": 47.989999999999995,
+  "vol": 0.2,
+  "src": "sine=f=990:d=0.1,afade=t=out:st=0:d=0.1"
+ },
+ {
+  "t": 52.010000000000005,
+  "vol": 0.25,
+  "src": "sine=f=500:d=0.05,afade=t=out:st=0:d=0.05"
+ },
+ {
+  "t": 53.34,
+  "vol": 0.25,
+  "src": "sine=f=500:d=0.05,afade=t=out:st=0:d=0.05"
+ },
+ {
+  "t": 54.58,
+  "vol": 0.25,
+  "src": "sine=f=500:d=0.05,afade=t=out:st=0:d=0.05"
+ },
+ {
+  "t": 57.8,
+  "vol": 0.12,
+  "src": "aevalsrc=sin(2*PI*1500*t)*exp(-90*mod(t\\,0.11)):d=1.6"
+ },
+ {
+  "t": 63.69,
+  "vol": 0.2,
+  "src": "sine=f=1320:d=0.1,afade=t=out:st=0:d=0.1"
+ },
+ {
+  "t": 66.25999999999999,
+  "vol": 0.4,
+  "src": "sine=f=2000:d=0.03,afade=t=out:st=0:d=0.03"
+ },
+ {
+  "t": 66.91,
+  "vol": 0.3,
+  "src": "sine=f=660:d=0.1,afade=t=out:st=0:d=0.1"
+ },
+ {
+  "t": 67.00999999999999,
+  "vol": 0.25,
+  "src": "sine=f=990:d=0.14,afade=t=out:st=0:d=0.14"
+ }
+]

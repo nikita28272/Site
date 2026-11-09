@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Битик — питомец интернета</title>
+  <meta name="description" content="На этом сайте живёт Битик — одно существо на весь интернет. Покормите его.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app">
+    <header class="top">
+      <h1>БИТИК</h1>
+      <p class="tagline">родился из битого пикселя · живёт на этом сайте</p>
+    </header>
+
+    <section class="stage">
+      <canvas id="room" width="128" height="72" aria-label="Комната Битика"></canvas>
+    </section>
+
+    <section class="panel">
+      <div class="meter">
+        <div class="meter-head">
+          <span>🍖 Сытость</span>
+          <span id="hungerValue">100%</span>
+        </div>
+        <div class="bar"><div class="bar-fill" id="hungerBar"></div></div>
+      </div>
+      <p class="status" id="status">Битик ждёт гостей</p>
+      <button class="feed" id="feed" type="button">Покормить</button>
+    </section>
+  </main>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

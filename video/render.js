@@ -39,6 +39,8 @@ function serve() {
   const duration = await page.evaluate(() => window.DURATION);
   const tracks = await page.evaluate(() => window.AUDIO_TRACKS || []);
   const sfxCues = await page.evaluate(() => window.SFX_CUES || []);
+  const sfxDir = await page.evaluate(() => window.SFX_DIR || "assets/sfx");
+  const musicFile = await page.evaluate(() => window.MUSIC || "assets/music.mp3");
 
   const grab = t => page.evaluate(t => {
     window.renderAt(t);
@@ -82,14 +84,14 @@ function serve() {
     n++;
   }
   for (const c of sfxCues) {
-    const f = path.join(D, "assets", "sfx", c.name + ".mp3");
+    const f = path.join(D, sfxDir, c.name + ".mp3");
     if (!fs.existsSync(f)) continue;
     inputs.push("-i", f);
     const ms = Math.round(c.t * 1000);
     fx.push(`[${n}:a]aformat=sample_rates=48000:channel_layouts=stereo,volume=${(c.vol * SFX_GAIN).toFixed(3)},adelay=${ms}|${ms}[s${n}]`);
     n++;
   }
-  const music = path.join(D, "assets", "music.mp3");
+  const music = path.join(D, musicFile);
   const hasMusic = fs.existsSync(music);
   if (hasMusic) inputs.push("-stream_loop", "-1", "-i", music);
   const vLabels = voice.map(v => v.slice(v.lastIndexOf("[")));

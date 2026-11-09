@@ -12,6 +12,7 @@ const ROOT = path.resolve(__dirname, "..");
 const ep = process.argv[2] || "ep1";
 const stillsArg = process.argv.indexOf("--stills");
 const FPS = Number(process.env.FPS || 30);
+const SFX_GAIN = Number(process.env.SFX_GAIN || 0.35); // общая громкость эффектов относительно голоса
 const outDir = path.join(__dirname, ep, "out");
 fs.mkdirSync(outDir, { recursive: true });
 
@@ -85,7 +86,7 @@ function serve() {
     if (!fs.existsSync(f)) continue;
     inputs.push("-i", f);
     const ms = Math.round(c.t * 1000);
-    fx.push(`[${n}:a]aformat=sample_rates=48000:channel_layouts=stereo,volume=${c.vol},adelay=${ms}|${ms}[s${n}]`);
+    fx.push(`[${n}:a]aformat=sample_rates=48000:channel_layouts=stereo,volume=${(c.vol * SFX_GAIN).toFixed(3)},adelay=${ms}|${ms}[s${n}]`);
     n++;
   }
   const music = path.join(D, "assets", "music.mp3");

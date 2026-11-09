@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Битик — эскиз существа</title>
+<style>
+  :root {
+    --bg: #17111f;
+    --card: #221a2e;
+    --text: #efe8ff;
+    --muted: #a99cc4;
+    --accent: #6fd36b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Courier New", monospace;
+    padding: 32px 16px;
+  }
+  h1 { text-align: center; margin: 0 0 6px; font-size: 28px; letter-spacing: 2px; }
+  .sub { text-align: center; color: var(--muted); margin: 0 0 32px; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 16px;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+  .card {
+    background: var(--card);
+    border: 3px solid #3a2d4f;
+    padding: 16px 8px 12px;
+    text-align: center;
+    position: relative;
+  }
+  canvas {
+    image-rendering: pixelated;
+    width: 128px;
+    height: 136px;
+    animation: bob 1s steps(1) infinite;
+  }
+  .card.sleep canvas { animation-duration: 2.4s; }
+  .card.sad canvas { animation: none; }
+  @keyframes bob { 0% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+  .label { margin-top: 10px; font-weight: bold; }
+  .hint { color: var(--muted); font-size: 13px; margin-top: 4px; }
+  .bubble {
+    position: absolute; top: 10px; right: 14px; font-size: 22px;
+  }
+  .zzz { color: var(--muted); font-weight: bold; animation: float 2.4s steps(3) infinite; }
+  @keyframes float { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-12px); opacity: .3; } }
+</style>
+</head>
+<body>
+  <h1>БИТИК</h1>
+  <p class="sub">рабочее имя · родился из битого пикселя · росток на голове показывает настроение</p>
+  <div class="grid" id="grid"></div>
+
+<script>
+// 16x17 пикселей. Легенда:
+// O контур, B тело, L блик, E глаз, W блик в глазу, C щёчки,
+// M рот, S стебель ростка, G листья, F лапки, T слеза
+const BASE = [
+  "......GG.GG.....",
+  ".......GSG......",
+  "........S.......",
+  "........S.......",
+  ".....OOOOOO.....",
+  "...OOBBBBBBOO...",
+  "..OBBLLBBBBBBO..",
+  "..OBLLBBBBBBBO..",
+  ".OBBBBBBBBBBBBO.",
+  ".OBBWEBBBBWEBBO.",
+  ".OBBEEBBBBEEBBO.",
+  ".OBCCBBMMBBCCBO.",
+  ".OBBBBBBBBBBBBO.",
+  "..OBBBBBBBBBBO..",
+  "..OBBBBBBBBBBO..",
+  "...OOBBBBBBOO...",
+  "....OFFOOFFO....",
+];
+
+const PALETTES = {
+  normal: { O:"#2b1d3a", B:"#9b7ed9", L:"#c9b6f2", E:"#1a1026", W:"#ffffff", C:"#f29bb8", M:"#5a2a4a", S:"#3f8f4a", G:"#6fd36b", F:"#6a4fa3", T:"#7fd0ff" },
+  sad:    { O:"#232634", B:"#7d86a8", L:"#a9b0cc", E:"#151826", W:"#dfe4f5", C:"#9aa2c0", M:"#3a3f55", S:"#4f6b52", G:"#7f9a7d", F:"#5c6488", T:"#7fd0ff" },
+  night:  { O:"#1b1430", B:"#6e5aa8", L:"#8f7cc8", E:"#120c20", W:"#ffffff", C:"#b07a9a", M:"#3d2246", S:"#3a7a6a", G:"#8ff7d0", F:"#4b3c80", T:"#7fd0ff" },
+};
+
+function grid() { return BASE.map(r => r.split("")); }
+function set(g, x, y, ch) { g[y][x] = ch; }
+
+const MOODS = [
+  { id:"normal", label:"Обычный", hint:"ждёт гостей", pal:"normal", edit: g => {} },
+  { id:"happy", label:"Счастлив", hint:"его погладили", pal:"normal", edit: g => {
+      // глаза-дуги ^ ^
+      for (const [x,y] of [[4,9],[5,9],[4,10],[5,10],[10,9],[11,9],[10,10],[11,10]]) set(g,x,y,"B");
+      set(g,4,9,"E"); set(g,3,10,"E"); set(g,5,10,"E");
+      set(g,11,9,"E"); set(g,10,10,"E"); set(g,12,10,"E");
+      // открытая улыбка
+      set(g,7,12,"M"); set(g,8,12,"M");
+      // листья расправлены шире
+      g[0] = ".....GGG.GGG....".split("");
+  }},
+  { id:"sad", label:"Грустит", hint:"никто не заходит", pal:"sad", edit: g => {
+      // поникший росток
+      g[0] = "................".split("");
+      g[1] = "................".split("");
+      g[2] = "........SSG.....".split("");
+      g[3] = "........S..GG...".split("");
+      // слеза и грустный рот
+      set(g,5,11,"T"); set(g,4,11,"B");
+      set(g,7,11,"B"); set(g,8,11,"B");
+      set(g,7,12,"M"); set(g,8,12,"M"); set(g,6,13,"M"); set(g,9,13,"M");
+      set(g,6,12,"B"); set(g,9,12,"B");
+      set(g,6,13,"M"); set(g,9,13,"M");
+  }},
+  { id:"hungry", label:"Голоден", hint:"урчит живот", pal:"normal", bubble:"🍖", edit: g => {
+      // рот открыт буквой О
+      set(g,7,11,"M"); set(g,8,11,"M"); set(g,7,12,"M"); set(g,8,12,"M");
+      // росток чуть наклонён
+      g[0] = ".......GG.GG....".split("");
+      g[1] = "........GSG.....".split("");
+  }},
+  { id:"sleep", label:"Спит", hint:"ночь по Москве", pal:"night", zzz:true, edit: g => {
+      // закрытые глаза
+      for (const [x,y] of [[4,9],[5,9],[10,9],[11,9]]) set(g,x,y,"B");
+      for (const [x,y] of [[4,10],[5,10],[10,10],[11,10]]) set(g,x,y,"E");
+      set(g,8,11,"B");
+  }},
+];
+
+function draw(canvas, g, pal) {
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  g.forEach((row,y) => row.forEach((ch,x) => {
+    if (ch === ".") return;
+    ctx.fillStyle = pal[ch];
+    ctx.fillRect(x,y,1,1);
+  }));
+}
+
+const root = document.getElementById("grid");
+for (const m of MOODS) {
+  const card = document.createElement("div");
+  card.className = "card " + m.id;
+  const c = document.createElement("canvas");
+  c.width = 16; c.height = 17;
+  const g = grid(); m.edit(g);
+  draw(c, g, PALETTES[m.pal]);
+  card.appendChild(c);
+  if (m.bubble) { const b = document.createElement("div"); b.className="bubble"; b.textContent=m.bubble; card.appendChild(b); }
+  if (m.zzz) { const z = document.createElement("div"); z.className="bubble zzz"; z.textContent="z Z"; card.appendChild(z); }
+  card.insertAdjacentHTML("beforeend", `<div class="label">${m.label}</div><div class="hint">${m.hint}</div>`);
+  root.appendChild(card);
+}
+</script>
+</body>
+</html>

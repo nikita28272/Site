@@ -1,55 +1,43 @@
-// Ведущий: позы из листа персонажа, появление по таймлайну и липсинк по озвучке.
+// Ведущий: 12 поз из двух листов (PNG с прозрачностью), появление по таймлайну и липсинк по озвучке.
 const D2R = Math.PI / 180;
 
-// Координаты — в пикселях исходных картинок (лист 1254×1254 и аватар 1254×1254).
-// anchor — центр лица, mouth — линия рта (центр, ширина, наклон, изгиб).
+// Лист 1536×1024, сетка 3×2 по 512 px. cell — [лист, столбец, ряд].
+// anchor — центр лица, mouth — линия рта (центр, ширина, наклон, изгиб) в пикселях листа.
 export const POSES = {
-  A:  { src: "sheet",  crop: [0, 0, 700, 640],     anchor: [380, 260],  mouth: { x: 390, y: 343, w: 47, a: 0,        arc: -3 } },
-  B:  { src: "sheet",  crop: [705, 0, 1254, 640],  anchor: [1000, 250], mouth: { x: 1103, y: 284, w: 28, a: -16 * D2R, arc: -1 } },
-  C:  { src: "sheet",  crop: [0, 650, 470, 1254],  anchor: [250, 920],  mouth: { x: 265, y: 1006, w: 33, a: 0,       arc: 0 } },
-  D:  { src: "sheet",  crop: [445, 650, 885, 1254], anchor: [650, 880], mouth: { x: 650, y: 934, w: 38, a: -13 * D2R, arc: -1 } },
-  E:  { src: "sheet",  crop: [885, 650, 1254, 1254], anchor: [1080, 820], mouth: null },
-  AV: { src: "avatar", crop: [0, 0, 1254, 1254],   anchor: [700, 500],  mouth: { x: 720, y: 614, w: 68, a: 8 * D2R,  arc: 0 } },
+  P1: { cell: [1, 0, 0], anchor: [300, 250], mouth: { x: 297, y: 325, w: 42, a: 0, arc: -2 } },          // анфас
+  P2: { cell: [1, 1, 0], anchor: [900, 200], mouth: { x: 923, y: 256, w: 24, a: -16 * D2R, arc: -1 } },  // профиль, взгляд вверх
+  P3: { cell: [1, 2, 0], anchor: [1290, 240], mouth: null },                                             // рука у рта — думает
+  P4: { cell: [1, 0, 1], anchor: [270, 740], mouth: { x: 255, y: 795, w: 45, a: -12 * D2R, arc: -3 } },  // наклон головы
+  P5: { cell: [1, 1, 1], anchor: [790, 780], mouth: { x: 793, y: 871, w: 38, a: -3 * D2R, arc: 0 } },    // глаза закрыты
+  P6: { cell: [1, 2, 1], anchor: [1280, 720], mouth: null },                                             // спиной
+  Q1: { cell: [2, 0, 0], anchor: [320, 230], mouth: { x: 311, y: 296, w: 45, a: 0, arc: -2 } },          // анфас, прищур
+  Q2: { cell: [2, 1, 0], anchor: [900, 180], mouth: { x: 919, y: 239, w: 26, a: -16 * D2R, arc: -1 } },  // профиль
+  Q3: { cell: [2, 2, 0], anchor: [1280, 250], mouth: null },                                             // ладонь у лица
+  Q4: { cell: [2, 0, 1], anchor: [250, 770], mouth: { x: 247, y: 832, w: 31, a: 0, arc: 0 } },           // исподлобья
+  Q5: { cell: [2, 1, 1], anchor: [790, 750], mouth: { x: 778, y: 785, w: 40, a: -23 * D2R, arc: -3 } },  // голова назад, свысока
+  Q6: { cell: [2, 2, 1], anchor: [1290, 720], mouth: null },                                             // спиной
 };
 
-const sources = {};
+const sheets = {};
 const cache = {};
 
-function feathered(img, [x0, y0, x1, y1], round) {
-  const w = x1 - x0, h = y1 - y0;
-  const c = new OffscreenCanvas(w, h);
-  const g = c.getContext("2d");
-  g.drawImage(img, x0, y0, w, h, 0, 0, w, h);
-  g.globalCompositeOperation = "destination-in";
-  if (round) {
-    const r = g.createRadialGradient(w / 2, h / 2, w * 0.40, w / 2, h / 2, w * 0.5);
-    r.addColorStop(0, "rgba(0,0,0,1)"); r.addColorStop(1, "rgba(0,0,0,0)");
-    g.fillStyle = r; g.fillRect(0, 0, w, h);
-  } else {
-    const f = 70;
-    const lx = g.createLinearGradient(0, 0, w, 0);
-    lx.addColorStop(0, "rgba(0,0,0,0)"); lx.addColorStop(f / w, "rgba(0,0,0,1)");
-    lx.addColorStop(1 - f / w, "rgba(0,0,0,1)"); lx.addColorStop(1, "rgba(0,0,0,0)");
-    g.fillStyle = lx; g.fillRect(0, 0, w, h);
-    const ty = g.createLinearGradient(0, 0, 0, h);
-    ty.addColorStop(0, "rgba(0,0,0,0)"); ty.addColorStop(40 / h, "rgba(0,0,0,1)"); ty.addColorStop(1, "rgba(0,0,0,1)");
-    g.fillStyle = ty; g.fillRect(0, 0, w, h);
-  }
-  return c;
-}
-
-export async function loadHost(sheetUrl, avatarUrl) {
+export async function loadHost(url1, url2) {
   const load = url => new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
-  sources.sheet = await load(sheetUrl);
-  sources.avatar = await load(avatarUrl);
-  for (const [k, p] of Object.entries(POSES)) cache[k] = feathered(sources[p.src], p.crop, k === "AV");
+  sheets[1] = await load(url1);
+  sheets[2] = await load(url2);
+  for (const [k, p] of Object.entries(POSES)) {
+    const [s, c, r] = p.cell;
+    const cv = new OffscreenCanvas(512, 512);
+    cv.getContext("2d").drawImage(sheets[s], c * 512, r * 512, 512, 512, 0, 0, 512, 512);
+    cache[k] = cv;
+  }
 }
 
 // Рот: 0 — закрыт (исходная линия), 1 — приоткрыт, 2 — открыт.
 function drawMouth(ctx, m, level) {
   if (level <= 0) return;
   const hw = m.w * (level === 2 ? 0.40 : 0.44);
-  const depth = m.w * (level === 2 ? 0.42 : 0.2);
+  const depth = m.w * (level === 2 ? 0.40 : 0.19);
   ctx.save();
   ctx.translate(m.x, m.y);
   ctx.rotate(m.a);
@@ -71,29 +59,33 @@ function drawMouth(ctx, m, level) {
     ctx.restore();
   }
   ctx.strokeStyle = "#160609";
-  ctx.lineWidth = Math.max(1.6, m.w * 0.05);
+  ctx.lineWidth = Math.max(1.4, m.w * 0.05);
   ctx.lineJoin = "round";
   ctx.stroke();
   ctx.restore();
 }
 
-// Рисует позу так, чтобы низ кадра позы стоял на нижнем краю экрана, а лицо было на screenX.
-export function drawPose(ctx, key, { screenX, scale, alpha = 1, dx = 0, dy = 0, mouth = 0, bottom = 1085 }) {
+// Рисует позу: лицо на screenX, нижний край ячейки — у нижнего края экрана (срез плеч уходит за кадр).
+export function drawPose(ctx, key, { screenX, scale, alpha = 1, dx = 0, dy = 0, mouth = 0, bottom = 1092, glow = 1 }) {
   const p = POSES[key];
   const img = cache[key];
   if (!img || alpha <= 0) return;
-  const [x0, y0, x1, y1] = p.crop;
+  const [s, c, r] = p.cell;
+  const x0 = c * 512, y0 = r * 512;
   const left = screenX - (p.anchor[0] - x0) * scale + dx;
-  const top = (key === "AV" ? 540 - (p.anchor[1] - y0) * scale : bottom - (y1 - y0) * scale) + dy;
+  const top = bottom - 512 * scale + Math.max(0, dy);
   ctx.save();
   ctx.globalAlpha = alpha;
-  // красная подсветка сзади
-  const gx = left + (p.anchor[0] - x0) * scale, gy = top + (p.anchor[1] - y0) * scale;
-  const glow = ctx.createRadialGradient(gx, gy, 40 * scale, gx, gy, 420 * scale);
-  glow.addColorStop(0, "rgba(170,15,35,.30)");
-  glow.addColorStop(1, "rgba(170,15,35,0)");
-  ctx.fillStyle = glow;
-  ctx.fillRect(gx - 450 * scale, gy - 450 * scale, 900 * scale, 900 * scale);
+  // мягкое красное свечение за головой
+  if (glow > 0) {
+    const gx = left + (p.anchor[0] - x0) * scale, gy = top + (p.anchor[1] - y0) * scale;
+    const g = ctx.createRadialGradient(gx, gy, 30 * scale, gx, gy, 330 * scale);
+    g.addColorStop(0, `rgba(190,20,40,${0.32 * glow})`);
+    g.addColorStop(1, "rgba(190,20,40,0)");
+    ctx.fillStyle = g;
+    ctx.fillRect(gx - 340 * scale, gy - 340 * scale, 680 * scale, 680 * scale);
+  }
+  ctx.imageSmoothingQuality = "high";
   ctx.translate(left, top);
   ctx.scale(scale, scale);
   ctx.drawImage(img, 0, 0);
@@ -103,3 +95,5 @@ export function drawPose(ctx, key, { screenX, scale, alpha = 1, dx = 0, dy = 0, 
   }
   ctx.restore();
 }
+
+export const POSE_KEYS = Object.keys(POSES);

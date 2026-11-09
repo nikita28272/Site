@@ -267,7 +267,7 @@ function drawHost(T, punchAmt) {
 }
 function hostFlash(T) {
   let f = 0;
-  for (const s of TRACK) if (s.enter === "cut") { const d = T - s.t0; if (d >= 0 && d < 0.16) f = Math.max(f, 0.16 * (1 - d / 0.16)); }
+  for (const s of TRACK) if (s.enter === "cut") { const d = T - s.t0; if (d >= 0 && d < 0.16) f = Math.max(f, 0.07 * (1 - d / 0.16)); }
   if (f > 0) { ctx.fillStyle = `rgba(255,40,60,${f})`; ctx.fillRect(0, 0, W, H); }
 }
 
@@ -868,7 +868,9 @@ async function init() {
 function buildSfx() {
   const c = [];
   const add = (t, name, vol = 0.5) => c.push({ t, name, vol });
-  for (const s of TRACK) if (s.enter === "cut" || s.enter === "slide") add(s.t0 - 0.05, "whoosh", 0.25);
+  // свист только при входе ведущего и на стыках блоков, не на каждой смене позы
+  for (const id of ORDER) add(S(id) - 0.35, "whoosh", 0.15);
+  for (const s of TRACK) if (s.enter === "slide") add(s.t0 - 0.05, "whoosh", 0.15);
   for (const t of PUNCHES) add(t, "boom", 0.55);
   for (let i = 0; i < 6; i++) add(GO + i, "tick", 0.35);
   add(IO + 8.75, "glitch", 0.35); add(IO + 18.53, "glitch", 0.35);

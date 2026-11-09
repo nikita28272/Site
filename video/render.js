@@ -98,7 +98,7 @@ function serve() {
   let bed = "[vo]";
   if (fLabels.length) { filters.push(`${fLabels.join("")}amix=inputs=${fLabels.length}:normalize=0[fx]`); }
   if (hasMusic) {
-    filters.push(`[${n}:a]aformat=sample_rates=48000:channel_layouts=stereo,volume=0.32,afade=t=in:d=2,afade=t=out:st=${(duration - 3).toFixed(2)}:d=3[mus]`);
+    filters.push(`[${n}:a]aformat=sample_rates=48000:channel_layouts=stereo,volume=0.2,afade=t=in:d=2,afade=t=out:st=${(duration - 3).toFixed(2)}:d=3[mus]`);
     filters.push(`[mus][vokey]sidechaincompress=threshold=0.03:ratio=6:attack=20:release=400[duck]`);
   }
   const mixIn = ["[vo]", ...(fLabels.length ? ["[fx]"] : []), ...(hasMusic ? ["[duck]"] : [])];

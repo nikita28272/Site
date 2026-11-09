@@ -12,7 +12,7 @@
 Нужны Node.js, Playwright (Chromium) и ffmpeg.
 
 ```bash
-# положить картинку ведущего в video/ep1/assets/host.jpg (в git не хранится)
+# ведущий: video/ep1/assets/host_sheet.png (5 поз) и host_avatar.png; липсинк: python3 video/lipsync.py vo_intro.mp3 vo_build.mp3 > lipsync.json
 node video/render.js ep1                  # полный рендер → video/ep1/out/ep1.mp4
 node video/render.js ep1 --stills 5,40,70 # отдельные кадры для проверки
 ```

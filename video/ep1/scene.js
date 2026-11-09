@@ -4,6 +4,7 @@ import {
   SPRITE_W, SPRITE_H, ROOM_W, ROOM_H, BITIK_X, BITIK_Y, FOOD_W,
   drawSprite, drawRoom, drawFood, countPixels, spriteGrid, PALETTES,
 } from "../../site/js/bitik.js";
+import { loadHost, drawPose } from "./host.js";
 
 const W = 1920, H = 1080;
 const cv = document.getElementById("c");
@@ -23,12 +24,12 @@ const easeOut = x => 1 - Math.pow(1 - x, 3);
 const ease = x => (x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
 const win = (T, a, b, f = 0.25) => clamp(Math.min((T - a) / f, (b - T) / f));
 const lerp = (a, b, p) => a + (b - a) * p;
-const CYAN = "#7de3ff";
+const CYAN = "#ff4d5e";
 
 function text(str, x, y, o = {}) {
   const {
     size = 64, weight = 900, family = "Unbounded", color = "#fff",
-    glow = "rgba(125,227,255,.55)", blur = 28, align = "center",
+    glow = "rgba(255,70,90,.55)", blur = 28, align = "center",
     alpha = 1, scale = 1, spacing = 0, baseline = "middle",
   } = o;
   if (alpha <= 0) return;
@@ -99,70 +100,75 @@ function apple(x, y, s) {
   ctx.restore();
 }
 
-// ── Ведущий (картинка пользователя) ────────────────────────────────
-let host = null;
-function prepareHost(img) {
-  const S = 1080;
-  const c = new OffscreenCanvas(S, S);
-  const g = c.getContext("2d");
-  g.drawImage(img, 0, 0, S, S);
-  // затемняем фон вокруг лица
-  g.globalCompositeOperation = "source-atop";
-  const dark = g.createRadialGradient(S * .5, S * .45, S * .18, S * .5, S * .5, S * .72);
-  dark.addColorStop(0, "rgba(5,8,18,0)");
-  dark.addColorStop(1, "rgba(5,8,18,.85)");
-  g.fillStyle = dark;
-  g.fillRect(0, 0, S, S);
-  g.fillStyle = "rgba(20,40,90,.18)";
-  g.fillRect(0, 0, S, S);
-  // мягкие края слева и сверху
-  g.globalCompositeOperation = "destination-in";
-  const lx = g.createLinearGradient(0, 0, S * .32, 0);
-  lx.addColorStop(0, "rgba(0,0,0,0)"); lx.addColorStop(1, "rgba(0,0,0,1)");
-  g.fillStyle = lx; g.fillRect(0, 0, S, S);
-  const ty = g.createLinearGradient(0, 0, 0, S * .18);
-  ty.addColorStop(0, "rgba(0,0,0,0)"); ty.addColorStop(1, "rgba(0,0,0,1)");
-  g.fillStyle = ty; g.fillRect(0, 0, S, S);
-  return c;
-}
-
-// ключевые кадры ведущего: прозрачность, сдвиг по x, масштаб
-const HOST_KEYS = [
-  [0, 0, 0, 1.08], [0.7, 1, 0, 1.04], [9.0, 1, 0, 1.0], [9.6, .4, 220, 1.0],
-  [21.2, .4, 220, 1.0], [21.6, 0, 300, 1.0], [25.4, 0, 0, 1.06], [25.8, 1, 0, 1.04],
-  [30.6, 1, 0, 1.0], [31.2, 0, 0, 1.0], [31.8, .9, 260, .92], [DURATION, .9, 260, .92],
+// ── Ведущий ────────────────────────────────────────────────────────
+// Каждый сегмент: поза, начало, конец, x лица на экране, масштаб, как входит (slide / cut).
+const HOST_TRACK = [
+  // интро
+  { p: "A",  t0: 0.0,       t1: 3.0,       x: 1450, s: 1.70, enter: "fade" },   // «У меня сорок восемь часов»
+  { p: "D",  t0: 3.0,       t1: 8.55,      x: 1450, s: 1.80, enter: "cut" },    // «…ОДНО. На весь интернет»
+  { p: "C",  t0: IO + 15.9, t1: IO + 17.95, x: 1500, s: 1.80, enter: "slide" }, // «А если про него забудут совсем…»
+  { p: "B",  t0: IO + 17.95, t1: IO + 20.9, x: 1420, s: 1.70, enter: "cut" },   // «…он изменится. Навсегда.»
+  { p: "A",  t0: IO + 24.9, t1: IO + 26.85, x: 1450, s: 1.70, enter: "cut" },   // «Поехали»
+  { p: "AV", t0: IO + 26.85, t1: BO - 0.3, x: 1540, s: 0.72, enter: "cut" },    // заставка «Серия 1»
+  // создание
+  { p: "D",  t0: BO - 0.1,  t1: BO + 7.6,  x: 1580, s: 1.55, enter: "slide" },  // «Начнём с главного…»
+  { p: "A",  t0: BO + 7.6,  t1: BO + 18.6, x: 1560, s: 1.45, enter: "cut" },    // росток
+  { p: "B",  t0: BO + 18.6, t1: BO + 24.6, x: 1520, s: 1.45, enter: "cut" },    // «Ему нужен дом» — смотрит вверх, на лампу
+  { p: "A",  t0: BO + 24.6, t1: BO + 32.0, x: 1560, s: 1.45, enter: "cut" },    // «Теперь главное…»
+  { p: "D",  t0: BO + 32.0, t1: BO + 37.0, x: 1580, s: 1.55, enter: "cut" },    // кнопка
+  { p: "A",  t0: BO + 37.0, t1: BO + 40.8, x: 1560, s: 1.45, enter: "cut" },    // «Битик живёт…»
+  { p: "E",  t0: BO + 40.8, t1: BO + 43.5, x: 1480, s: 1.80, enter: "cut" },    // спиной: «В следующей серии…»
+  { p: "AV", t0: BO + 43.5, t1: DURATION + 1, x: 1540, s: 0.72, enter: "cut" }, // «И кормить его будете вы»
 ];
-function hostState(T) {
-  for (let i = 0; i < HOST_KEYS.length - 1; i++) {
-    const [t0, a0, x0, s0] = HOST_KEYS[i], [t1, a1, x1, s1] = HOST_KEYS[i + 1];
-    if (T <= t1) {
-      const p = ease(prog(T, t0, t1));
-      return { a: lerp(a0, a1, p), dx: lerp(x0, x1, p), s: lerp(s0, s1, p) };
-    }
-  }
-  return { a: .9, dx: 260, s: .92 };
+
+let LIPS = null;
+function mouthLevel(T) {
+  if (!LIPS) return 0;
+  const pick = (str, t0) => {
+    const i = Math.floor((T - t0) * LIPS.fps);
+    return i >= 0 && i < str.length ? +str[i] : 0;
+  };
+  return Math.max(pick(LIPS.intro, IO), pick(LIPS.build, BO));
 }
 
-function drawHost(T, punch) {
-  if (!host) return;
-  const { a, dx, s } = hostState(T);
-  if (a <= 0.01) return;
-  const breathe = 1 + 0.006 * Math.sin(T * 1.6);
-  const sc = s * breathe * (1 + punch);
-  const size = 1080 * sc;
-  const x = 1920 - 1080 + 40 + dx + (1080 - size) / 2;
-  const y = 1080 - size + Math.sin(T * 0.8) * 4;
-  ctx.save();
-  ctx.globalAlpha = a;
-  ctx.drawImage(host, x, y, size, size);
-  ctx.restore();
+// кадры, где ведущий «влетает» с красной вспышкой
+const FLASHES = HOST_TRACK.filter(s => s.enter === "cut").map(s => s.t0);
+
+function drawHost(T, punchAmt) {
+  const m = mouthLevel(T);
+  for (const seg of HOST_TRACK) {
+    if (T < seg.t0 - 0.01 || T > seg.t1 + 0.3) continue;
+    const next = HOST_TRACK.find(s => s.t0 >= seg.t1 - 0.05 && s.t0 <= seg.t1 + 0.05);
+    let alpha = 1, dx = 0;
+    if (seg.enter === "slide") { const k = easeOut(prog(T, seg.t0, seg.t0 + 0.4)); alpha = k; dx = (1 - k) * 160; }
+    else if (seg.enter === "fade") alpha = prog(T, seg.t0, seg.t0 + 0.7);
+    if (T > seg.t1) {
+      if (next) continue;                       // прямая склейка: следующий сегмент уже рисуется
+      const k = prog(T, seg.t1, seg.t1 + 0.3);  // уход вправо
+      alpha *= 1 - k; dx += k * 140;
+    }
+    const sp = T - seg.t0;
+    const breathe = Math.sin(T * 1.7) * 4;
+    const nod = m * 2.5;
+    const settle = seg.enter === "cut" ? (1 - easeOut(clamp(sp / 0.35))) * 0.05 : 0;
+    drawPose(ctx, seg.p, {
+      screenX: seg.x, scale: seg.s * (1 + settle + punchAmt), alpha,
+      dx, dy: breathe + nod, mouth: seg.p === "E" ? 0 : m,
+    });
+  }
+}
+
+function hostFlash(T) {
+  let f = 0;
+  for (const t of FLASHES) { const d = T - t; if (d >= 0 && d < 0.18) f = Math.max(f, 0.22 * (1 - d / 0.18)); }
+  if (f > 0) { ctx.fillStyle = `rgba(255,40,60,${f})`; ctx.fillRect(0, 0, W, H); }
 }
 
 // ── Фон и HUD ───────────────────────────────────────────────────────
 function background(T) {
-  ctx.fillStyle = "#05070f";
+  ctx.fillStyle = "#050306";
   ctx.fillRect(0, 0, W, H);
-  ctx.strokeStyle = "rgba(90,140,255,.07)";
+  ctx.strokeStyle = "rgba(255,80,100,.045)";
   ctx.lineWidth = 1;
   ctx.beginPath();
   const off = (T * 6) % 64;
@@ -170,8 +176,8 @@ function background(T) {
   for (let y = 0; y < H; y += 64) { ctx.moveTo(0, y); ctx.lineTo(W, y); }
   ctx.stroke();
   const g = ctx.createRadialGradient(760, 960, 50, 760, 960, 900);
-  g.addColorStop(0, "rgba(40,90,210,.30)");
-  g.addColorStop(1, "rgba(40,90,210,0)");
+  g.addColorStop(0, "rgba(130,10,28,.40)");
+  g.addColorStop(1, "rgba(130,10,28,0)");
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, W, H);
 }
@@ -201,7 +207,7 @@ function fmt(s) {
 
 function hud(T) {
   const a = clamp((T - 0.3) / 0.4);
-  text("ТАЙМЕР", 72, 58, { size: 15, family: "JetBrains Mono", weight: 700, color: "rgba(125,227,255,.6)", glow: null, align: "left", alpha: a, spacing: 3 });
+  text("ТАЙМЕР", 72, 58, { size: 15, family: "JetBrains Mono", weight: 700, color: "rgba(255,70,90,.6)", glow: null, align: "left", alpha: a, spacing: 3 });
   text(fmt(timerSecs(T)), 72, 92, { size: 34, family: "JetBrains Mono", weight: 700, color: CYAN, align: "left", alpha: a, blur: 18, spacing: 2 });
 }
 
@@ -223,7 +229,7 @@ const CAPTION_GROUPS = [
   { pos: [600, 1012], size: 50, end: BO + 31.9, items: [C(BO + 24.81, "ТЕПЕРЬ ГЛАВНОЕ"), C(BO + 26.3, "ОН УМЕЕТ ХОТЕТЬ ЕСТЬ"), C(BO + 28.29, "−1% КАЖДУЮ МИНУТУ"), C(BO + 30.38, "И ОН ЭТО ПОКАЗЫВАЕТ")] },
   { pos: [600, 1012], size: 50, end: BO + 36.7, items: [C(BO + 32.19, "ОДНА КНОПКА"), C(BO + 33.47, "ОДНО ДЕЙСТВИЕ"), C(BO + 34.76, "И ПАДАЕТ ЕДА", GREEN)] },
   { pos: [600, 1012], size: 50, end: BO + 40.6, items: [C(BO + 37.15, "БИТИК ЖИВЁТ", GREEN), C(BO + 38.46, "НО ПОКА — ТОЛЬКО У МЕНЯ")] },
-  { pos: [760, 960], size: 56, end: DURATION, items: [C(BO + 43.7, "КОРМИТЬ БУДЕТЕ ВЫ", GREEN)] },
+  { pos: [560, 960], size: 56, end: DURATION, items: [C(BO + 43.7, "КОРМИТЬ БУДЕТЕ ВЫ", GREEN)] },
 ];
 
 function captions(T) {
@@ -235,7 +241,7 @@ function captions(T) {
     const pop = easeOut(prog(T, cur.t, cur.t + 0.16));
     const fadeOut = clamp((g.end + 0.2 - T) / 0.2);
     text(cur.s, g.pos[0], g.pos[1], {
-      size: cur.size || g.size || 66, color: cur.color, glow: cur.glow || "rgba(125,227,255,.5)",
+      size: cur.size || g.size || 66, color: cur.color, glow: cur.glow || "rgba(255,70,90,.5)",
       blur: cur.blur || 26, scale: 1 + 0.22 * (1 - pop), alpha: pop * fadeOut,
     });
   }
@@ -308,8 +314,8 @@ function teaserCard(T) {
   ctx.save();
   ctx.globalAlpha = a;
   roundRect(x, y, 520, 120, 14);
-  ctx.fillStyle = "rgba(12,16,32,.85)"; ctx.fill();
-  ctx.strokeStyle = "rgba(125,227,255,.35)"; ctx.lineWidth = 2; ctx.stroke();
+  ctx.fillStyle = "rgba(16,10,14,.88)"; ctx.fill();
+  ctx.strokeStyle = "rgba(255,70,90,.35)"; ctx.lineWidth = 2; ctx.stroke();
   ctx.fillStyle = CYAN; ctx.fillRect(x, y + 18, 4, 84);
   ctx.restore();
   ctx.save(); ctx.globalAlpha = a;
@@ -318,12 +324,12 @@ function teaserCard(T) {
   sproutIcon(x + 40, y + 42, 8);
   ctx.restore();
   text("ВО ЧТО ОН ВЫРАСТЕТ", x + 116, y + 52, { size: 28, weight: 700, align: "left", alpha: a, glow: null });
-  text("ЗА 48 ЧАСОВ", x + 116, y + 86, { size: 15, family: "JetBrains Mono", weight: 700, color: "#8a93b8", align: "left", alpha: a, glow: null, spacing: 3 });
+  text("ЗА 48 ЧАСОВ", x + 116, y + 86, { size: 15, family: "JetBrains Mono", weight: 700, color: "#a8909a", align: "left", alpha: a, glow: null, spacing: 3 });
   // размытый «ответ»
   ctx.save();
   ctx.globalAlpha = a;
   ctx.filter = "blur(10px)";
-  ctx.fillStyle = "#4aa8ff";
+  ctx.fillStyle = "#ff3b4f";
   ctx.fillRect(x + 10, y + 150, 150, 46); ctx.fillRect(x + 180, y + 150, 140, 46); ctx.fillRect(x + 340, y + 150, 90, 46);
   ctx.filter = "none";
   ctx.restore();
@@ -332,10 +338,10 @@ function teaserCard(T) {
 
 function bigTimer(T) {
   const a = win(T, IO + 0.0, IO + 2.4, 0.3);
-  if (a > 0) text(fmt(H48), 760, 640, { size: 150, family: "Unbounded", weight: 900, color: "#d9f7ff", alpha: a, blur: 50, scale: 1 + 0.08 * (1 - easeOut(prog(T, IO, IO + 0.3))) });
+  if (a > 0) text(fmt(H48), 760, 640, { size: 150, family: "Unbounded", weight: 900, color: "#ffffff", alpha: a, blur: 50, scale: 1 + 0.08 * (1 - easeOut(prog(T, IO, IO + 0.3))) });
   const b = win(T, GO, IO + 26.9, 0.25);
   if (b > 0) {
-    text(fmt(timerSecs(T)), 760, 600, { size: 150, weight: 900, color: "#d9f7ff", alpha: b, blur: 50 });
+    text(fmt(timerSecs(T)), 760, 600, { size: 150, weight: 900, color: "#ffffff", alpha: b, blur: 50 });
     text("ПОЕХАЛИ", 760, 770, { size: 84, alpha: b * easeOut(prog(T, GO, GO + 0.15)), scale: 1 + 0.25 * (1 - easeOut(prog(T, GO, GO + 0.15))) });
   }
 }
@@ -348,20 +354,20 @@ function equation(T) {
   const p3 = easeOut(prog(T, IO + 21.55, IO + 21.8));
   text("1", 430, 470, { size: 300, color: "#f2fbff", alpha: a * p1, blur: 60, scale: 1.2 - .2 * p1 });
   text("САЙТ", 430, 680, { size: 88, color: "#f2fbff", alpha: a * p1, blur: 30 });
-  ctx.save(); ctx.globalAlpha = a * p2; ctx.fillStyle = "#c9d6ff";
+  ctx.save(); ctx.globalAlpha = a * p2; ctx.fillStyle = "#ffd6db";
   ctx.fillRect(805, 520, 90, 18); ctx.fillRect(805, 570, 90, 18); ctx.restore();
   text("48:00", 1370, 490, { size: 170, family: "Unbounded", color: "#f2fbff", alpha: a * p3, blur: 50 });
-  text("ЧАСОВ", 1370, 680, { size: 88, color: CYAN, glow: "rgba(77,180,255,.9)", alpha: a * p3, blur: 30 });
+  text("ЧАСОВ", 1370, 680, { size: 88, color: CYAN, glow: "rgba(255,40,60,.9)", alpha: a * p3, blur: 30 });
   const p4 = easeOut(prog(T, IO + 21.92, IO + 22.2));
-  text("0 СТРОК КОДА НА СТАРТЕ", 960, 860, { size: 44, weight: 700, color: "#9aa6d6", alpha: a * p4, glow: null });
+  text("0 СТРОК КОДА НА СТАРТЕ", 960, 860, { size: 44, weight: 700, color: "#c4a9b0", alpha: a * p4, glow: null });
 }
 
 function titleCard(T) {
   const a = win(T, IO + 26.9, BO - 0.3, 0.3);
   if (a <= 0) return;
   const g = T < IO + 27.3 ? (Math.floor(T * 30) % 2 ? 8 : -8) : 0;
-  text("СЕРИЯ 1", 640 + g, 440, { size: 30, family: "JetBrains Mono", weight: 700, color: CYAN, alpha: a, spacing: 8, blur: 16 });
-  text("РОЖДЕНИЕ", 640 - g, 545, { size: 140, alpha: a, blur: 50 });
+  text("СЕРИЯ 1", 560 + g, 450, { size: 30, family: "JetBrains Mono", weight: 700, color: CYAN, alpha: a, spacing: 8, blur: 16 });
+  text("РОЖДЕНИЕ", 560 - g, 545, { size: 116, alpha: a, blur: 50 });
 }
 
 // ── Сцены «создания» ────────────────────────────────────────────────
@@ -370,27 +376,27 @@ const P = { x: 70, y: 150, w: 1070, h: 810 };
 function panel(a) {
   ctx.save();
   ctx.globalAlpha = a;
-  ctx.shadowColor = "rgba(125,227,255,.18)"; ctx.shadowBlur = 50;
+  ctx.shadowColor = "rgba(255,70,90,.18)"; ctx.shadowBlur = 50;
   roundRect(P.x, P.y, P.w, P.h, 18);
-  ctx.fillStyle = "#0b0e1b"; ctx.fill();
+  ctx.fillStyle = "#0d0a0f"; ctx.fill();
   ctx.shadowBlur = 0;
-  ctx.strokeStyle = "rgba(125,227,255,.22)"; ctx.lineWidth = 2; ctx.stroke();
+  ctx.strokeStyle = "rgba(255,70,90,.22)"; ctx.lineWidth = 2; ctx.stroke();
   ctx.restore();
 }
 
 function windowBar(a, title, highlight = 0) {
   ctx.save();
   ctx.globalAlpha = a;
-  ctx.fillStyle = "#141a2e";
+  ctx.fillStyle = "#1a1217";
   roundRect(P.x, P.y, P.w, 50, [18, 18, 0, 0]); ctx.fill();
   ["#ff5f57", "#febc2e", "#28c840"].forEach((c, i) => {
     ctx.fillStyle = c; ctx.beginPath(); ctx.arc(P.x + 28 + i * 24, P.y + 25, 7, 0, Math.PI * 2); ctx.fill();
   });
   roundRect(P.x + 120, P.y + 11, 420, 28, 14);
-  ctx.fillStyle = "#0b0e1b"; ctx.fill();
+  ctx.fillStyle = "#0d0a0f"; ctx.fill();
   if (highlight > 0) { ctx.strokeStyle = `rgba(255,190,90,${highlight})`; ctx.lineWidth = 3; ctx.shadowColor = "#ffbe5a"; ctx.shadowBlur = 20 * highlight; ctx.stroke(); ctx.shadowBlur = 0; }
   ctx.restore();
-  text(title, P.x + 140, P.y + 26, { size: 16, family: "JetBrains Mono", weight: 400, color: "#9aa6d6", align: "left", alpha: a, glow: null });
+  text(title, P.x + 140, P.y + 26, { size: 16, family: "JetBrains Mono", weight: 400, color: "#c4a9b0", align: "left", alpha: a, glow: null });
 }
 
 // B1: код спрайта печатается, сетка заполняется
@@ -430,7 +436,7 @@ function sceneSprite(T) {
   const cs = 27, gx = P.x + P.w - 40 - cs * SPRITE_W, gy = P.y + 130;
   ctx.save();
   ctx.globalAlpha = a;
-  ctx.fillStyle = "#070912"; ctx.fillRect(gx, gy, cs * SPRITE_W, cs * SPRITE_H);
+  ctx.fillStyle = "#08060a"; ctx.fillRect(gx, gy, cs * SPRITE_W, cs * SPRITE_H);
   for (let r = 0; r < SPRITE_H; r++) for (let c = 0; c < SPRITE_W; c++) {
     const idx = r * SPRITE_W + c;
     const ch = CODE_ROWS[r][c];
@@ -441,7 +447,7 @@ function sceneSprite(T) {
       if (age < 1) { ctx.fillStyle = `rgba(255,255,255,${0.7 * (1 - age)})`; ctx.fillRect(gx + c * cs, gy + r * cs, cs, cs); }
     }
   }
-  ctx.strokeStyle = "rgba(125,227,255,.10)"; ctx.lineWidth = 1;
+  ctx.strokeStyle = "rgba(255,70,90,.10)"; ctx.lineWidth = 1;
   ctx.beginPath();
   for (let c = 0; c <= SPRITE_W; c++) { ctx.moveTo(gx + c * cs + .5, gy); ctx.lineTo(gx + c * cs + .5, gy + cs * SPRITE_H); }
   for (let r = 0; r <= SPRITE_H; r++) { ctx.moveTo(gx, gy + r * cs + .5); ctx.lineTo(gx + cs * SPRITE_W, gy + r * cs + .5); }
@@ -588,7 +594,7 @@ function sceneRoom(T) {
     ctx.fillStyle = "#fff"; ctx.fill(); ctx.strokeStyle = "#000"; ctx.lineWidth = 2.5; ctx.stroke();
     if (T >= tClick && T < tClick + 0.35) {
       const d = (T - tClick) / 0.35;
-      ctx.strokeStyle = `rgba(125,227,255,${1 - d})`; ctx.lineWidth = 3;
+      ctx.strokeStyle = `rgba(255,70,90,${1 - d})`; ctx.lineWidth = 3;
       ctx.beginPath(); ctx.arc(0, 0, 10 + 40 * d, 0, Math.PI * 2); ctx.stroke();
     }
     ctx.restore();
@@ -601,8 +607,8 @@ function sceneRoom(T) {
     ctx.save();
     ctx.globalAlpha = ka;
     roundRect(kx, ky, kw, kh, 12);
-    ctx.fillStyle = "rgba(8,10,20,.92)"; ctx.fill();
-    ctx.strokeStyle = "rgba(125,227,255,.35)"; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = "rgba(12,8,12,.94)"; ctx.fill();
+    ctx.strokeStyle = "rgba(255,70,90,.35)"; ctx.lineWidth = 2; ctx.stroke();
     ctx.restore();
     const lines = [
       [["setInterval", "#82aaff"], ["(() => {", "#e6edf3"]],
@@ -631,11 +637,11 @@ function sceneRoom(T) {
 function endCard(T) {
   const a = win(T, BO + 40.9, DURATION + 1, 0.4);
   if (a <= 0) return;
-  text("ОСТАЛОСЬ", 760, 360, { size: 26, family: "JetBrains Mono", weight: 700, color: "rgba(125,227,255,.75)", alpha: a, spacing: 8, glow: null });
-  text(fmt(END_SECS), 760, 500, { size: 160, color: "#d9f7ff", alpha: a, blur: 50, scale: 1 + 0.06 * (1 - easeOut(prog(T, BO + 40.9, BO + 41.3))) });
+  text("ОСТАЛОСЬ", 560, 360, { size: 26, family: "JetBrains Mono", weight: 700, color: "rgba(255,70,90,.75)", alpha: a, spacing: 8, glow: null });
+  text(fmt(END_SECS), 560, 500, { size: 160, color: "#ffffff", alpha: a, blur: 50, scale: 1 + 0.06 * (1 - easeOut(prog(T, BO + 40.9, BO + 41.3))) });
   const b = a * easeOut(prog(T, BO + 41.6, BO + 42.0));
-  text("СЕРИЯ 2", 760, 680, { size: 26, family: "JetBrains Mono", weight: 700, color: CYAN, alpha: b, spacing: 8, blur: 12 });
-  text("ОНЛАЙН", 760, 760, { size: 84, alpha: b, blur: 36 });
+  text("СЕРИЯ 2", 560, 680, { size: 26, family: "JetBrains Mono", weight: 700, color: CYAN, alpha: b, spacing: 8, blur: 12 });
+  text("ОНЛАЙН", 560, 760, { size: 84, alpha: b, blur: 36 });
 }
 
 // ── Кадр ────────────────────────────────────────────────────────────
@@ -659,6 +665,7 @@ function renderAt(T) {
   captions(T);
   ctx.restore();
   hud(T);
+  hostFlash(T);
   vignette();
   // затемнения в начале, на стыке частей и в конце
   const dip = Math.max(1 - clamp(T / 0.6), win(T, BO - 0.45, BO + 0.15, 0.3), clamp((T - (DURATION - 0.6)) / 0.6));
@@ -684,9 +691,8 @@ async function init() {
     await f.load();
     document.fonts.add(f);
   }));
-  const img = new Image();
-  img.src = "assets/host.jpg";
-  await img.decode().then(() => { host = prepareHost(img); }).catch(() => {});
+  await loadHost("assets/host_sheet.png", "assets/host_avatar.png");
+  LIPS = await (await fetch("lipsync.json")).json();
   const q = new URLSearchParams(location.search);
   if (q.has("t")) renderAt(parseFloat(q.get("t")));
   else {

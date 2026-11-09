@@ -21,6 +21,27 @@ export const POSES = {
 const sheets = {};
 const cache = {};
 
+// В ячейку листа попадают кусочки соседних поз (плечи, пряди). Оставляем только фигуру,
+// связанную с лицом: заливка по непрозрачным пикселям от точки лица.
+function keepMainFigure(g, sx, sy) {
+  const N = 512, img = g.getImageData(0, 0, N, N), d = img.data;
+  const seen = new Uint8Array(N * N), stack = [];
+  const solid = i => d[i * 4 + 3] > 8;
+  let start = Math.round(sy) * N + Math.round(sx);
+  if (!solid(start)) {
+    for (let r = 1; r < 40 && !solid(start); r++) for (const [dx, dy] of [[r, 0], [-r, 0], [0, r], [0, -r]]) { const i = (Math.round(sy) + dy) * N + Math.round(sx) + dx; if (solid(i)) { start = i; break; } }
+  }
+  stack.push(start); seen[start] = 1;
+  while (stack.length) {
+    const i = stack.pop(), x = i % N, y = (i / N) | 0;
+    for (const j of [x > 0 ? i - 1 : -1, x < N - 1 ? i + 1 : -1, y > 0 ? i - N : -1, y < N - 1 ? i + N : -1]) {
+      if (j >= 0 && !seen[j] && solid(j)) { seen[j] = 1; stack.push(j); }
+    }
+  }
+  for (let i = 0; i < N * N; i++) if (!seen[i]) d[i * 4 + 3] = 0;
+  g.putImageData(img, 0, 0);
+}
+
 export async function loadHost(url1, url2) {
   const load = url => new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
   sheets[1] = await load(url1);
@@ -28,7 +49,9 @@ export async function loadHost(url1, url2) {
   for (const [k, p] of Object.entries(POSES)) {
     const [s, c, r] = p.cell;
     const cv = new OffscreenCanvas(512, 512);
-    cv.getContext("2d").drawImage(sheets[s], c * 512, r * 512, 512, 512, 0, 0, 512, 512);
+    const g = cv.getContext("2d");
+    g.drawImage(sheets[s], c * 512, r * 512, 512, 512, 0, 0, 512, 512);
+    keepMainFigure(g, p.anchor[0] - c * 512, p.anchor[1] - r * 512);
     cache[k] = cv;
   }
 }

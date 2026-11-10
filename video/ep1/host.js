@@ -51,6 +51,20 @@ export async function loadHost(url1, url2) {
     const cv = new OffscreenCanvas(512, 512);
     const g = cv.getContext("2d");
     g.drawImage(sheets[s], c * 512, r * 512, 512, 512, 0, 0, 512, 512);
+    // нижний ряд листа: сверху прилипает край плеч верхней позы — срезаем и мягко проявляем;
+    // верхний ряд: макушка упирается в край листа — тоже мягко проявляем, чтобы не было ровного среза
+    {
+      const cut = r === 1 ? 10 : 0, full = r === 1 ? 40 : 34;
+      g.globalCompositeOperation = "destination-in";
+      const fade = g.createLinearGradient(0, 0, 0, 512);
+      fade.addColorStop(0, "rgba(0,0,0,0)");
+      fade.addColorStop(cut / 512, "rgba(0,0,0,0)");
+      fade.addColorStop(full / 512, "rgba(0,0,0,1)");
+      fade.addColorStop(1, "rgba(0,0,0,1)");
+      g.fillStyle = fade;
+      g.fillRect(0, 0, 512, 512);
+      g.globalCompositeOperation = "source-over";
+    }
     keepMainFigure(g, p.anchor[0] - c * 512, p.anchor[1] - r * 512);
     cache[k] = cv;
   }

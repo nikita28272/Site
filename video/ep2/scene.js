@@ -9,9 +9,9 @@ import { loadHost, drawPose, POSES } from "../ep1/host.js";
 const W = 1920, H = 1080;
 const cv = document.getElementById("c");
 const ctx = cv.getContext("2d");
-const ORDER = ["intro", "server", "domain", "memory", "feed", "guard", "online", "search", "outro"];
-const DESK = ["server", "domain", "memory", "feed", "guard", "online", "search"];
-const STEP = { server: "сервер", domain: "домен", memory: "база", feed: "кнопка", guard: "защита", online: "онлайн", search: "поиск" };
+const ORDER = ["intro", "server", "domain", "memory", "limits", "feed", "clock", "guard", "online", "search", "fails", "outro"];
+const DESK = ["server", "domain", "memory", "limits", "feed", "clock", "guard", "online", "search", "fails"];
+const STEP = { server: "сервер", domain: "домен", memory: "база", limits: "лимиты", feed: "кнопка", clock: "часы", guard: "защита", online: "онлайн", search: "поиск", fails: "ошибки" };
 const T0 = 0.6, GAP = 0.8;
 const RED = "#ff4d5e", GREEN = "#9dff8a";
 let BLK = {}, DURATION = 60, LIPS = null, TRACKS = [];
@@ -458,7 +458,7 @@ function sceneGuard(T) {
   const r1 = browser(120, 150, 900, 760, "bitik.site", a, 1);
   const u = miniSite(r1, T, { h: 92, mood: "normal", wait });
   if (u) { const [cx, cy] = cursorAt(T, [[S(id), 600, 950], [c0 - .1, u.btn[0], u.btn[1]]]); cursor(cx, cy, a, [c0, ...spam], T); spam.forEach(s => { const k = win(T, s, s + .5, .1); if (k > 0) ui("✕", u.btn[0] + 50, u.btn[1] - 40 - (T - s) * 60, { size: 26, color: RED, alpha: a * k }); }); }
-  const tA = a * win(T, P(id, 4) - .2, E(id) + .5, .3);
+  const tA = a * win(T, P(id, 4) - .2, P(id, 7) - .1, .3);
   const r2 = windowFrame(1060, 300, 760, 460, "", tA, "terminal"); titled(r2, "терминал");
   code(r2, [
     [["$ ", K.ok], ["curl … /rpc/bitik_feed", K.tx]],
@@ -467,6 +467,14 @@ function sceneGuard(T) {
     [["$ ", K.ok], ["curl -X PATCH … hunger=100", K.tx]],
     [["[]   ", K.red], ["// 0 строк изменено", K.cm]],
   ], prog(T, P(id, 4), P(id, 6) + .6), { y0: 40, size: 22, num: false });
+  const ipA = a * win(T, P(id, 7) - .1, E(id) + .5, .3);
+  const r3 = windowFrame(1060, 130, 760, 300, "", ipA); titled(r3, "кулдаун");
+  if (r3) {
+    ui("браузер", r3.x + 40, r3.y + 60, { size: 22, color: "#a8949b", align: "left", alpha: ipA }); ui("3 мин", r3.x + r3.w - 40, r3.y + 60, { size: 26, color: "#efe8ff", align: "right", alpha: ipA });
+    ui("IP-адрес", r3.x + 40, r3.y + 120, { size: 22, color: "#a8949b", align: "left", alpha: ipA }); ui("20 сек", r3.x + r3.w - 40, r3.y + 120, { size: 26, color: "#ffd36b", align: "right", alpha: ipA });
+    const hk = prog(T, P(id, 9), P(id, 9) + .6);
+    mono(hk < .5 ? "ip: 95.24.xxx.xxx" : "ip: md5 → 9f2c…e41a", r3.x + 40, r3.y + 190, { size: 22, color: hk < .5 ? "#ff8a96" : GREEN, align: "left", alpha: ipA * (hk > 0 ? 1 : 0) });
+  }
 }
 
 function sceneOnline(T) {
@@ -505,6 +513,104 @@ function sceneSearch(T) {
       ui(v, r2.x + 360, y, { size: 24, color: i === 1 ? GREEN : "#efe8ff", align: "left", alpha: sh });
     });
   }
+}
+
+function sceneLimits(T) {
+  const id = "limits"; const a = win(T, S(id) - .3, E(id) + .5, .3); if (a <= 0) return;
+  const r = windowFrame(260, 130, 1400, 700, "", a); titled(r, "калькулятор лимитов");
+  if (!r) return;
+  const big = (s, x, y, t0, c = "#efe8ff", sz = 64) => text(s, x, y, { size: sz, color: c, alpha: a * easeOut(prog(T, t0, t0 + .3)), glow: null });
+  big("200", r.x + 300, r.y + 130, P(id, 2)); ui("онлайн одновременно", r.x + 300, r.y + 190, { size: 20, color: "#a8949b", alpha: a * prog(T, P(id, 2), P(id, 2) + .3) });
+  big("2 000 000", r.x + 1000, r.y + 130, P(id, 2) + .8); ui("сообщений в месяц", r.x + 1000, r.y + 190, { size: 20, color: "#a8949b", alpha: a * prog(T, P(id, 2) + .8, P(id, 2) + 1.1) });
+  // одно кормление → всем
+  const fan = a * win(T, P(id, 3), P(id, 5), .3);
+  if (fan > 0) {
+    const cx = r.x + 300, cy = r.y + 420;
+    for (let i = 0; i < 24; i++) {
+      const ang = -1.1 + i * 2.2 / 23, x = cx + Math.cos(ang) * 420, y = cy + Math.sin(ang) * 170;
+      const k = prog(T, P(id, 3) + .3 + i * .03, P(id, 3) + .8 + i * .03);
+      ctx.save(); ctx.globalAlpha = fan; ctx.strokeStyle = "rgba(255,90,110,.25)"; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(x, y); ctx.stroke();
+      ctx.fillStyle = "#ff8a96"; ctx.beginPath(); ctx.arc(x, y, 7, 0, 7); ctx.fill();
+      if (k > 0 && k < 1) { ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(lerp(cx, x, k), lerp(cy, y, k), 5, 0, 7); ctx.fill(); }
+      ctx.restore();
+    }
+    ctx.save(); ctx.globalAlpha = fan; ctx.fillStyle = "#e2445c"; ctx.beginPath(); ctx.arc(cx, cy, 26, 0, 7); ctx.fill(); ctx.restore();
+    ui("🍎", cx, cy, { size: 26, alpha: fan });
+  }
+  const bar = a * win(T, P(id, 4) - .1, E(id) + .5, .3);
+  if (bar > 0) {
+    const bx = r.x + 800, by = r.y + 360, bw = 520;
+    ui("лимит месяца", bx, by - 30, { size: 20, color: "#a8949b", align: "left", alpha: bar });
+    const live = T < P(id, 5) + .3;
+    const fill = live ? easeOut(prog(T, P(id, 4), P(id, 4) + 1.6)) : lerp(1, .04, easeOut(prog(T, P(id, 5) + .3, P(id, 5) + 1.2)));
+    ctx.save(); ctx.globalAlpha = bar; ctx.fillStyle = "#0b0812"; ctx.fillRect(bx, by, bw, 34); ctx.fillStyle = live ? "#e2445c" : "#6fd36b"; ctx.fillRect(bx + 3, by + 3, (bw - 6) * fill, 28); ctx.restore();
+    ui(live ? `день ${Math.max(1, Math.ceil(3 * fill))} из 30` : "запрос раз в 5 секунд", bx, by + 70, { size: 24, color: live ? "#ff8a96" : GREEN, align: "left", alpha: bar });
+    if (!live) mono("setInterval(refresh, 5000)", bx, by + 130, { size: 22, color: K.fn, align: "left", alpha: bar });
+  }
+}
+
+function sceneClock(T) {
+  const id = "clock"; const a = win(T, S(id) - .3, E(id) + .5, .3); if (a <= 0) return;
+  const face = (cx, cy, off, label, col, k) => {
+    ctx.save(); ctx.globalAlpha = a * k;
+    ctx.fillStyle = "#17141a"; ctx.beginPath(); ctx.arc(cx, cy, 130, 0, 7); ctx.fill();
+    ctx.strokeStyle = col; ctx.lineWidth = 6; ctx.stroke();
+    const m = (T * 2 + off) / 60 * Math.PI * 2, h = m / 12;
+    ctx.lineCap = "round"; ctx.strokeStyle = "#efe8ff";
+    ctx.lineWidth = 8; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.sin(h + 1) * 60, cy - Math.cos(h + 1) * 60); ctx.stroke();
+    ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.sin(m) * 100, cy - Math.cos(m) * 100); ctx.stroke();
+    ctx.restore();
+    ui(label, cx, cy + 175, { size: 22, color: col, alpha: a * k });
+  };
+  const sync = easeOut(prog(T, P(id, 4) + .5, P(id, 4) + 1.5));
+  const k1 = prog(T, P(id, 1), P(id, 1) + .3);
+  face(560, 420, 0, "твой телефон", "#efe8ff", k1);
+  face(1360, 420, lerp(5, 0, sync), sync > .9 ? "сверено ✓" : "спешит на 5 мин", sync > .9 ? GREEN : "#ff8a96", k1);
+  const hung = a * win(T, P(id, 2), P(id, 4), .25);
+  if (hung > 0) { ui("Битик: 77%", 560, 700, { size: 30, color: "#efe8ff", alpha: hung }); ui("Битик: 72%", 1360, 700, { size: 30, color: "#ff8a96", alpha: hung }); }
+  const srv = a * win(T, P(id, 3) - .1, E(id) + .5, .3);
+  if (srv > 0) {
+    ctx.save(); ctx.globalAlpha = srv; rr(810, 160, 300, 80, 16); ctx.fillStyle = "#e2445c"; ctx.fill(); ctx.restore();
+    ui("сервер: 13:08:08", 960, 200, { size: 24, color: "#1a0f14", alpha: srv });
+    const k = prog(T, P(id, 4), P(id, 4) + .8);
+    if (k > 0 && k < 1) { ctx.save(); ctx.fillStyle = "#fff"; ctx.shadowColor = RED; ctx.shadowBlur = 16; for (const tx of [560, 1360]) { ctx.beginPath(); ctx.arc(lerp(960, tx, k), lerp(240, 300, k), 9, 0, 7); ctx.fill(); } ctx.restore(); }
+    mono("Date: …13:08:08 GMT", 960, 290, { size: 18, color: "#ffd2d8", alpha: srv * prog(T, P(id, 4), P(id, 4) + .3) });
+  }
+  const same = a * prog(T, P(id, 5), P(id, 5) + .3);
+  if (same > 0) { ui("Битик: 77%", 560, 700, { size: 30, color: GREEN, alpha: same }); ui("Битик: 77%", 1360, 700, { size: 30, color: GREEN, alpha: same }); }
+}
+
+function sceneFails(T) {
+  const id = "fails"; const a = win(T, S(id) - .3, E(id) + .5, .3); if (a <= 0) return;
+  const card = (i, x, y, w, h, title, body) => {
+    const k = a * easeOut(prog(T, P(id, i) - .1, P(id, i) + .25));
+    if (k <= 0) return null;
+    const r = windowFrame(x, y, w, h, "", k); titled(r, title); body(r, k); return r;
+  };
+  card(1, 120, 120, 760, 300, "Actions", (r, k) => {
+    ui("✕  Deploy site to Pages  #1", r.x + 40, r.y + 70, { size: 24, color: "#ff8a96", align: "left", alpha: k });
+    ui("✓  Deploy site to Pages  #2", r.x + 40, r.y + 140, { size: 24, color: GREEN, align: "left", alpha: k * prog(T, P(id, 1) + 1.5, P(id, 1) + 1.8) });
+    mono("хостинг ещё не был включён", r.x + 40, r.y + 200, { size: 18, color: "#a8949b", align: "left", alpha: k });
+  });
+  card(2, 960, 140, 820, 300, "браузер", (r, k) => {
+    ui("⊘  Подключение не защищено", r.x + 40, r.y + 80, { size: 28, color: "#ffb36b", align: "left", alpha: k });
+    mono("http://bitik.site", r.x + 40, r.y + 140, { size: 20, color: "#a8949b", align: "left", alpha: k });
+    ui("→ сертификат выпускается…", r.x + 40, r.y + 200, { size: 20, color: "#a8949b", align: "left", alpha: k });
+  });
+  card(3, 160, 470, 760, 300, "Вебмастер", (r, k) => {
+    ui("Файлы Sitemap", r.x + 40, r.y + 60, { size: 26, color: "#efe8ff", align: "left", alpha: k });
+    ui("🔒 режим «только для чтения»", r.x + 40, r.y + 130, { size: 22, color: "#ffb36b", align: "left", alpha: k });
+    mono("sitemap всё равно найдётся через robots.txt", r.x + 40, r.y + 190, { size: 17, color: "#a8949b", align: "left", alpha: k });
+  });
+  const ok = T >= P(id, 5) + .2;
+  card(4, 960, 470, 640, 380, "og.png", (r, k) => {
+    ctx.save(); ctx.globalAlpha = k; ctx.fillStyle = "#1b1530"; ctx.fillRect(r.x + 30, r.y + 25, r.w - 60, r.h - 60); ctx.restore();
+    bitik("happy", r.x + r.w / 2, r.y + 190, 6, k);
+    if (!ok) { text("Ð‘Ð˜Ð¢Ð˜Ðš", r.x + r.w / 2, r.y + 250, { size: 48, glow: null, alpha: k }); mono("ÐžÐ”Ð˜Ð Ð¿Ð¸Ñ‚Ð¾Ð¼ÐµÑ†", r.x + r.w / 2, r.y + 295, { size: 20, color: "#ffd2d8", alpha: k }); }
+    else { text("БИТИК", r.x + r.w / 2, r.y + 250, { size: 48, alpha: k, scale: 1 + .2 * (1 - easeOut(prog(T, P(id, 5) + .2, P(id, 5) + .45))) }); mono("один питомец на весь интернет", r.x + r.w / 2, r.y + 295, { size: 20, color: "#ffd2d8", alpha: k }); }
+  });
+  const fix = a * win(T, P(id, 5), E(id) + .5, .3);
+  if (fix > 0) { ctx.save(); ctx.globalAlpha = fix; rr(160, 800, 520, 50, 10); ctx.fillStyle = "rgba(10,4,7,.9)"; ctx.fill(); ctx.restore(); mono('+ <meta charset="utf-8">', 190, 825, { size: 22, color: K.str, align: "left", alpha: fix }); }
 }
 
 // ── интро и финал (крупный ведущий) ─────────────────────────────────
@@ -587,7 +693,7 @@ function camera(T) {
   if (BLK.domain) { add(P("domain", 4) + .2, 1, 960, 540); add(P("domain", 4) + .8, 1.15, 1250, 520); add(P("domain", 5) - .2, 1.15, 1250, 520); add(P("domain", 5) + .3, 1, 960, 540); }
   if (BLK.memory) { add(P("memory", 5) + .2, 1, 960, 540); add(P("memory", 5) + .8, 1.12, 900, 420); add(E("memory"), 1.12, 900, 420); add(E("memory") + .5, 1, 960, 540); }
   if (BLK.feed) { add(P("feed", 3) - .2, 1, 960, 540); add(P("feed", 3) + .3, 1.1, 960, 620); add(E("feed"), 1.1, 960, 620); add(E("feed") + .5, 1, 960, 540); }
-  if (BLK.guard) { add(P("guard", 4) - .2, 1, 960, 540); add(P("guard", 4) + .4, 1.2, 1440, 520); add(E("guard"), 1.2, 1440, 520); add(E("guard") + .5, 1, 960, 540); }
+  if (BLK.guard) { add(P("guard", 4) - .2, 1, 960, 540); add(P("guard", 4) + .4, 1.2, 1440, 520); add(P("guard", 7) - .4, 1.2, 1440, 520); add(P("guard", 7) + .2, 1, 960, 540); }
   keys.sort((a, b) => a[0] - b[0]);
   let z = 1, x = 960, y = 540;
   for (let i = 0; i < keys.length; i++) {
@@ -618,9 +724,9 @@ function renderAt(T) {
     const id = DESK.find(k => BLK[k] && T >= S(k) - .5 && T < E(k) + GAP) || "server";
     ctx.save();
     ctx.translate(W / 2, H / 2); ctx.scale(cam.z, cam.z); ctx.translate(-cam.x, -cam.y);
-    sceneServer(T); sceneDomain(T); sceneMemory(T); sceneFeed(T); sceneGuard(T); sceneOnline(T); sceneSearch(T);
+    sceneServer(T); sceneDomain(T); sceneMemory(T); sceneLimits(T); sceneFeed(T); sceneClock(T); sceneGuard(T); sceneOnline(T); sceneSearch(T); sceneFails(T);
     ctx.restore();
-    dock({ server: "browser", domain: "browser", memory: "editor", feed: "browser", guard: "terminal", online: "bitik", search: "editor" }[id]);
+    dock({ server: "browser", domain: "browser", memory: "editor", limits: "files", feed: "browser", clock: "terminal", guard: "terminal", online: "bitik", search: "editor", fails: "browser" }[id]);
     stepLabel(T, id, 1);
     captions(T, true);
     drawFacecam(T, 1);
@@ -683,6 +789,9 @@ function buildSfx() {
   add(P("feed", 1) + .3, "click", .5); add(P("feed", 1) + 1.1, "chomp", .45); add(P("feed", 4), "chime", .35);
   add(S("guard") + .4, "click", .5); [0, .25, .5, .75].forEach(d => add(P("guard", 1) + .1 + d, "denied", .3)); add(P("guard", 4), "typing", .3);
   add(P("online", 2), "pop", .4);
+  add(P("limits", 3) + .3, "sparkle", .3); add(P("limits", 5) + .3, "chime", .3);
+  add(P("clock", 1), "clock", .35); add(P("clock", 5), "chime", .35);
+  [1, 2, 3].forEach(i => add(P("fails", i), "denied", .35)); add(P("fails", 5) + .2, "chime", .4);
   add(P("search", 1) - .3, "typing", .3); add(P("search", 2) + .3, "chime", .35);
   add(S("outro"), "whoosh", .2); add(P("outro", 2), "boom", .45); add(P("outro", 4), "boom", .5);
   return c;

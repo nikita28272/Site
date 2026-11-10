@@ -3,31 +3,59 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Битик — питомец интернета</title>
-  <meta name="description" content="На этом сайте живёт Битик — одно существо на весь интернет. Покормите его.">
+  <title>Битик — один питомец на весь интернет</title>
+  <meta name="description" content="Битик — пиксельный питомец, который живёт на этом сайте. Он один на всех: покорми его, и он станет сытым для каждого посетителя. Забудете — загрустит.">
+  <link rel="canonical" href="https://bitik.site/">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://bitik.site/">
+  <meta property="og:title" content="Битик — один питомец на весь интернет">
+  <meta property="og:description" content="Покорми Битика. Он один на всех, и его жизнь зависит от посетителей.">
+  <meta property="og:image" content="https://bitik.site/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="favicon.png" type="image/png">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <main class="app">
     <header class="top">
       <h1>БИТИК</h1>
-      <p class="tagline">родился из битого пикселя · живёт на этом сайте</p>
+      <p class="tagline">один питомец на весь интернет · родился из битого пикселя</p>
     </header>
 
     <section class="stage">
       <canvas id="room" width="128" height="72" aria-label="Комната Битика"></canvas>
+      <div class="online" id="online" aria-live="polite"></div>
     </section>
 
     <section class="panel">
       <div class="meter">
         <div class="meter-head">
           <span>🍖 Сытость</span>
-          <span id="hungerValue">100%</span>
+          <span id="hungerValue">…</span>
         </div>
         <div class="bar"><div class="bar-fill" id="hungerBar"></div></div>
       </div>
-      <p class="status" id="status">Битик ждёт гостей</p>
-      <button class="feed" id="feed" type="button">Покормить</button>
+      <p class="status" id="status">Связываюсь с Битиком…</p>
+      <button class="feed" id="feed" type="button" disabled>Покормить</button>
+    </section>
+
+    <section class="feedlog">
+      <h2>Что происходит</h2>
+      <ul id="feedList"></ul>
+      <p class="total" id="total"></p>
+    </section>
+
+    <section class="about">
+      <h2>Кто такой Битик</h2>
+      <p>Битик — маленькое пиксельное существо, которое родилось из битого пикселя и живёт на этом сайте. Он <b>один на всех</b>: если его покормит кто-то в другом городе, сытым он станет и для тебя.</p>
+      <h2>Как за ним ухаживать</h2>
+      <ul>
+        <li>Каждую минуту сытость падает на 1%. За 100 минут без еды Битик проголодается полностью.</li>
+        <li>Кнопка «Покормить» добавляет 15%. Кормить можно раз в 3 минуты — чтобы его не закидали едой.</li>
+        <li>По ростку на голове видно настроение: раскрыт — счастлив, поник — грустит.</li>
+        <li>Если про Битика забудут совсем, он изменится. Во что — узнаем вместе.</li>
+      </ul>
+      <p>Сайт создаётся по сериям на YouTube: каждая серия добавляет Битику что-то новое.</p>
     </section>
   </main>
 

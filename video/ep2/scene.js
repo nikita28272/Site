@@ -554,7 +554,7 @@ function sceneOutro(T) {
     text(fmt(HEND), 560, 430, { size: 150, alpha: end, blur: 50 });
     ui("СЕРИЯ 3", 560, 600, { size: 26, color: RED, alpha: end, spacing: 8 });
     text("ЖИЗНЬ", 560, 685, { size: 90, alpha: end, blur: 36 });
-    ui("день и ночь · сон · игры · имя", 560, 770, { size: 24, color: "#ffd2d8", alpha: end * prog(T, P(id, 5), P(id, 5) + .3) });
+    ui("день и ночь · сон · игры", 560, 770, { size: 24, color: "#ffd2d8", alpha: end * prog(T, P(id, 5), P(id, 5) + .3) });
   }
 }
 
@@ -562,6 +562,9 @@ function sceneOutro(T) {
 function captions(T, desk) {
   for (const id of ORDER) {
     const b = BLK[id]; if (!b || T < b.ph[0].t0 || T > b.end + .3) continue;
+    // в финале название сайта и так крупно на экране — субтитры не дублируем
+    if (id === "outro" && T < P("outro", 4) - .1) continue;
+    if (id === "domain" && T >= P("domain", 1) && T < P("domain", 2)) continue;
     let cur = null; for (const p of b.ph) if (T >= p.t0) cur = p;
     if (!cur) continue;
     const pop = easeOut(prog(T, cur.t0, cur.t0 + .16)), fade = clamp((b.end + .3 - T) / .3);

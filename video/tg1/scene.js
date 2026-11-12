@@ -10,7 +10,7 @@ const VO_END = IO + 27.0;
 const DURATION = VO_END + 1.6;
 const CHANNEL = "t.me/za5days";
 const BEAT = 60 / 130;                // темп музыки
-const MUSIC_FILE = "../ep1/assets/music.mp3"; // заменить на фонк, когда сгенерируется
+const MUSIC_FILE = new URLSearchParams(location.search).get("music") || "assets/music.mp3"; // нет файла — ролик без музыки
 const RED = "#ff4d5e", PINK = "#ffd2d8", GREY = "#c4a9b0";
 let LIPS = null;
 const t = s => IO + s;                // время по словам из озвучки → время ролика

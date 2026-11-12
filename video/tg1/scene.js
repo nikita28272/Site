@@ -76,6 +76,7 @@ function hud(T) {
   text(fmt(timerSecs(T)), 60, 162, { size: 44, family: "JetBrains Mono", weight: 700, color: RED, align: "left", alpha: a, blur: 18, spacing: 2 });
   mono("ПОДПИСЧИКИ", 1020, 120, { size: 20, color: "rgba(255,70,90,.6)", align: "right", alpha: a, spacing: 3 });
   const k = pop(T, t(23.41), .3);
+  mono("/ 10 000", 1020, 200, { size: 22, color: "rgba(255,210,216,.6)", align: "right", alpha: a });
   text(String(subs(T)), 1020, 162, { size: 44, family: "JetBrains Mono", weight: 700, color: T >= t(23.41) ? "#9dff8a" : "#fff", align: "right", alpha: a, blur: 18, scale: 1 + .5 * (1 - k) * (T >= t(23.41) ? 1 : 0) });
 }
 
@@ -151,7 +152,7 @@ function channelCard(T, a, y, n, sub) {
   const g = ctx.createLinearGradient(x + 40, y + 45, x + 180, y + 185); g.addColorStop(0, "#ff5a6c"); g.addColorStop(1, "#a3122a");
   ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x + 110, y + 115, 72, 0, 7); ctx.fill(); ctx.restore();
   plane(x + 108, y + 118, .95, a);
-  text("МОЙ КАНАЛ", x + 220, y + 82, { size: 46, align: "left", alpha: a, glow: null, maxW: 580 });
+  text("10 ТЫСЯЧ ЗА 5 ДНЕЙ", x + 220, y + 82, { size: 40, align: "left", alpha: a, glow: null, maxW: 580 });
   mono(CHANNEL, x + 220, y + 132, { size: 26, color: GREY, align: "left", alpha: a });
   mono(sub, x + 220, y + 180, { size: 28, color: n > 0 ? "#9dff8a" : PINK, align: "left", alpha: a });
 }

@@ -267,10 +267,10 @@ async function init() {
   window.MUSIC = MUSIC_FILE;
   const c = [], add = (s, name, vol) => c.push({ t: s, name, vol });
   for (const s of PUNCHES) add(s, "boom", .4);
-  add(t(4.17), "whoosh", .25); add(t(4.6), "pop", .3); add(t(6.59), "glitch", .4);
+  add(t(4.17), "whoosh", .25); add(t(4.6), "chime", .22); add(t(6.59), "glitch", .4);
   add(t(9.0), "sparkle", .3);
   for (const s of [10.69, 11.85, 12.71]) add(t(s), "denied", .35);
-  add(PLUS + .02, "pop", .5); add(PLUS + .05, "sparkle", .35);
+  add(PLUS + .02, "chime", .4); add(PLUS + .05, "sparkle", .35);
   add(t(21.0), "glitch", .3); add(t(22.9), "chime", .4);
   for (let i = 0; i < 3; i++) add(GO + .4 + i * .5, "tick", .3);
   window.SFX_CUES = c;
